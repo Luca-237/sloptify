@@ -126,13 +126,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         child: Row(
           children: [
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [AppTheme.accent, AppTheme.pink],
-              ).createShader(bounds),
-              child: const Icon(Icons.music_note_rounded, color: Colors.white, size: 28),
-            ),
-            const SizedBox(width: 10),
             Text(
               'Sloptify',
               style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 24),
