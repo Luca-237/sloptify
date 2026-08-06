@@ -5,9 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
 import '../api/music_api.dart';
 import '../theme/app_theme.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'download_helper.dart';
 
 enum DownloadState { idle, loading, ready, error }
 
@@ -69,24 +70,16 @@ class _DownloadButtonState extends ConsumerState<DownloadButton>
       final downloadUrl = await api.requestDownload(widget.videoId!, widget.title, widget.artist);
 
       if (kIsWeb) {
-        // Importación condicional embebida o vía hack, pero mejor usamos url_launcher correctamente o js.
-        // Como dart:html puede causar problemas de compilación en cross-platform si no se aísla bien, 
-        // podemos forzar la descarga agregando un header en el backend, o intentando con _blank.
-        // Pero lo más limpio en el frontend cross-platform para descargar sin dart:html 
-        // es usar un package como 'download' o inyectar código JS.
-        // Para no romper la compilación de Android, creamos un helper o usamos _blank.
-        
-        final uri = Uri.parse(downloadUrl);
-        // Volvemos a abrir en pestaña nueva, que fuerza la descarga si el Content-Disposition es attachment
-        await launchUrl(uri);
-        
+        // Descarga directa en el navegador sin abrir nueva pestaña
+        triggerBrowserDownload(downloadUrl, '${widget.title} - ${widget.artist}.mp3');
+
         setState(() {
           _state = DownloadState.ready;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('✅ Descarga solicitada, revisá tus descargas o la nueva pestaña'),
+              content: Text('✅ Descarga iniciada'),
               backgroundColor: AppTheme.accent,
               behavior: SnackBarBehavior.floating,
             ),

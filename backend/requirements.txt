@@ -3,3 +3,4 @@ uvicorn[standard]
 ytmusicapi
 yt-dlp
 python-multipart
+httpx

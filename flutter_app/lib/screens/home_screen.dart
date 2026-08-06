@@ -9,6 +9,7 @@ import '../widgets/song_card.dart';
 import '../widgets/album_card.dart';
 import 'album_screen.dart';
 import '../providers/player_provider.dart';
+import '../api/image_proxy.dart';
 
 enum SearchFilter { songs, albums, all }
 
@@ -133,7 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(width: 10),
             Text(
-              'MusicFinder',
+              'Sloptify',
               style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 24),
             ),
             const Spacer(),
@@ -233,9 +234,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ).animate().fadeIn(delay: 150.ms);
 
   String _filterLabel(SearchFilter f) => switch (f) {
-        SearchFilter.all => '🎵 Todo',
-        SearchFilter.songs => '🎶 Canciones',
-        SearchFilter.albums => '💿 Álbumes',
+        SearchFilter.all => 'Todo',
+        SearchFilter.songs => 'Canciones',
+        SearchFilter.albums => 'Álbumes',
       };
 
   Widget _buildResults(List<dynamic> data, SearchFilter filter) {
@@ -273,7 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         itemCount: songs.length,
         itemBuilder: (_, i) => SongCard(
               song: songs[i],
-              onTap: () => ref.read(playerProvider.notifier).playSong(songs[i]),
+              onTap: () => ref.read(playerProvider.notifier).playFromQueue(songs, i),
             )
             .animate()
             .fadeIn(delay: (i * 30).ms)
@@ -314,7 +315,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (type == 'song') {
           return SongCard(
             song: Song.fromJson(item),
-            onTap: () => ref.read(playerProvider.notifier).playSong(Song.fromJson(item)),
+            onTap: () {
+              // Filtrar solo las canciones de la lista mixta para la cola
+              final songItems = data
+                  .where((item) => item is Map<String, dynamic> && item['type'] == 'song')
+                  .map((item) => Song.fromJson(item as Map<String, dynamic>))
+                  .toList();
+              final song = Song.fromJson(item);
+              final songIndex = songItems.indexWhere((s) => s.videoId == song.videoId);
+              ref.read(playerProvider.notifier).playFromQueue(
+                songItems,
+                songIndex >= 0 ? songIndex : 0,
+              );
+            },
           )
               .animate()
               .fadeIn(delay: (i * 30).ms)
@@ -340,7 +353,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             radius: 24,
             backgroundColor: AppTheme.bgSurface,
             backgroundImage: item['thumbnail'] != null
-                ? NetworkImage(item['thumbnail'])
+                ? NetworkImage(proxyImageUrl(item['thumbnail'])!)
                 : null,
             child: item['thumbnail'] == null
                 ? const Icon(Icons.person_rounded, color: AppTheme.textSecondary)

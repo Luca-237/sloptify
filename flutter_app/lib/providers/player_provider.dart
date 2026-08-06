@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:http/http.dart' as http;
 import '../models/song.dart';
 import '../api/config.dart';
 
@@ -9,6 +11,8 @@ class PlayerStateData {
   final bool isLoading;
   final Duration position;
   final Duration duration;
+  final List<Song> queue;
+  final int currentIndex;
 
   const PlayerStateData({
     this.currentSong,
@@ -16,6 +20,8 @@ class PlayerStateData {
     this.isLoading = false,
     this.position = Duration.zero,
     this.duration = Duration.zero,
+    this.queue = const [],
+    this.currentIndex = -1,
   });
 
   PlayerStateData copyWith({
@@ -24,6 +30,8 @@ class PlayerStateData {
     bool? isLoading,
     Duration? position,
     Duration? duration,
+    List<Song>? queue,
+    int? currentIndex,
   }) {
     return PlayerStateData(
       currentSong: currentSong ?? this.currentSong,
@@ -31,8 +39,13 @@ class PlayerStateData {
       isLoading: isLoading ?? this.isLoading,
       position: position ?? this.position,
       duration: duration ?? this.duration,
+      queue: queue ?? this.queue,
+      currentIndex: currentIndex ?? this.currentIndex,
     );
   }
+
+  bool get hasNext => currentIndex < queue.length - 1;
+  bool get hasPrevious => currentIndex > 0;
 }
 
 class PlayerNotifier extends StateNotifier<PlayerStateData> {
@@ -48,8 +61,13 @@ class PlayerNotifier extends StateNotifier<PlayerStateData> {
         state = state.copyWith(isLoading: true, isPlaying: isPlaying);
       } else if (processingState == ProcessingState.completed) {
         state = state.copyWith(isLoading: false, isPlaying: false, position: Duration.zero);
-        _audioPlayer.pause();
-        _audioPlayer.seek(Duration.zero);
+        // Auto-avanzar a la siguiente canción
+        if (state.hasNext) {
+          playNext();
+        } else {
+          _audioPlayer.pause();
+          _audioPlayer.seek(Duration.zero);
+        }
       } else {
         state = state.copyWith(isLoading: false, isPlaying: isPlaying);
       }
@@ -66,18 +84,101 @@ class PlayerNotifier extends StateNotifier<PlayerStateData> {
     });
   }
 
+  /// Obtiene la URL del audio cacheado en nuestro backend.
+  Future<String?> _fetchStreamUrl(String videoId) async {
+    try {
+      final response = await http.get(Uri.parse('$kBaseUrl/stream/url/$videoId'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final url = data['url'] as String?;
+        if (url != null) {
+          // La URL es relativa al backend, convertir a absoluta
+          return url.startsWith('http') ? url : '$kBaseUrl$url';
+        }
+      }
+    } catch (e) {
+      print("Error al obtener URL de stream: $e");
+    }
+    return null;
+  }
+
+  /// Reproduce una canción individual (sin cola).
   Future<void> playSong(Song song) async {
     if (song.videoId == null) return;
 
-    state = state.copyWith(currentSong: song, isLoading: true, position: Duration.zero);
+    await _audioPlayer.stop();
+
+    state = state.copyWith(
+      currentSong: song,
+      isLoading: true,
+      position: Duration.zero,
+      duration: Duration.zero,
+    );
+
     try {
-      final streamUrl = '$kBaseUrl/stream/${song.videoId}';
+      final streamUrl = await _fetchStreamUrl(song.videoId!);
+      if (streamUrl == null) {
+        state = state.copyWith(isLoading: false, isPlaying: false);
+        return;
+      }
       await _audioPlayer.setUrl(streamUrl);
       _audioPlayer.play();
     } catch (e) {
       state = state.copyWith(isLoading: false, isPlaying: false);
       print("Error al reproducir: $e");
     }
+  }
+
+  /// Reproduce una canción desde una cola (lista de canciones).
+  Future<void> playFromQueue(List<Song> queue, int index) async {
+    if (index < 0 || index >= queue.length) return;
+    final song = queue[index];
+    if (song.videoId == null) return;
+
+    await _audioPlayer.stop();
+
+    state = state.copyWith(
+      queue: queue,
+      currentIndex: index,
+      currentSong: song,
+      isLoading: true,
+      position: Duration.zero,
+      duration: Duration.zero,
+    );
+
+    try {
+      final streamUrl = await _fetchStreamUrl(song.videoId!);
+      if (streamUrl == null) {
+        state = state.copyWith(isLoading: false, isPlaying: false);
+        return;
+      }
+      await _audioPlayer.setUrl(streamUrl);
+      _audioPlayer.play();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, isPlaying: false);
+      print("Error al reproducir: $e");
+    }
+  }
+
+  /// Avanza a la siguiente canción de la cola.
+  Future<void> playNext() async {
+    if (!state.hasNext) return;
+    await playFromQueue(state.queue, state.currentIndex + 1);
+  }
+
+  /// Retrocede a la canción anterior de la cola.
+  /// Si la posición actual es mayor a 3 segundos, reinicia la canción actual.
+  Future<void> playPrevious() async {
+    if (state.position.inSeconds > 3) {
+      // Reiniciar la canción actual
+      await _audioPlayer.seek(Duration.zero);
+      return;
+    }
+    if (!state.hasPrevious) {
+      await _audioPlayer.seek(Duration.zero);
+      return;
+    }
+    await playFromQueue(state.queue, state.currentIndex - 1);
   }
 
   void togglePlayPause() {
@@ -91,7 +192,7 @@ class PlayerNotifier extends StateNotifier<PlayerStateData> {
   void seek(Duration position) {
     _audioPlayer.seek(position);
   }
-  
+
   void setVolume(double volume) {
     _audioPlayer.setVolume(volume);
   }

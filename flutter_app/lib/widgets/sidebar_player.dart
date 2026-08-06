@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/player_provider.dart';
 import '../theme/app_theme.dart';
+import '../api/image_proxy.dart';
 import 'download_button.dart';
 
 class SidebarPlayer extends ConsumerWidget {
@@ -48,7 +49,7 @@ class SidebarPlayer extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: song?.thumbnail != null
                 ? CachedNetworkImage(
-                    imageUrl: song!.thumbnail!,
+                    imageUrl: proxyImageUrl(song!.thumbnail!)!,
                     fit: BoxFit.cover,
                     errorWidget: (context, url, error) => const Icon(Icons.music_note, size: 80, color: Colors.white24),
                   )
@@ -94,10 +95,14 @@ class SidebarPlayer extends ConsumerWidget {
                     overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
                   ),
                   child: Slider(
-                    value: playerState.position.inSeconds.toDouble().clamp(0.0, playerState.duration.inSeconds.toDouble().clamp(0.1, double.infinity)),
-                    max: playerState.duration.inSeconds.toDouble().clamp(0.1, double.infinity),
+                    value: playerState.duration.inMilliseconds > 0
+                        ? playerState.position.inMilliseconds.toDouble().clamp(0.0, playerState.duration.inMilliseconds.toDouble())
+                        : 0.0,
+                    max: playerState.duration.inMilliseconds > 0
+                        ? playerState.duration.inMilliseconds.toDouble()
+                        : 1.0,
                     onChanged: (val) {
-                      notifier.seek(Duration(seconds: val.toInt()));
+                      notifier.seek(Duration(milliseconds: val.toInt()));
                     },
                   ),
                 ),
@@ -122,8 +127,10 @@ class SidebarPlayer extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.skip_previous_rounded),
                 iconSize: 36,
-                color: Colors.white,
-                onPressed: () {},
+                color: playerState.hasPrevious || (song != null && playerState.position.inSeconds > 3)
+                    ? Colors.white
+                    : Colors.white38,
+                onPressed: song != null ? () => notifier.playPrevious() : null,
               ),
               const SizedBox(width: 16),
               GestureDetector(
@@ -153,8 +160,8 @@ class SidebarPlayer extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.skip_next_rounded),
                 iconSize: 36,
-                color: Colors.white,
-                onPressed: () {},
+                color: playerState.hasNext ? Colors.white : Colors.white38,
+                onPressed: song != null && playerState.hasNext ? () => notifier.playNext() : null,
               ),
             ],
           ),
@@ -164,6 +171,7 @@ class SidebarPlayer extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 40),
               child: DownloadButton(
+                key: ValueKey('sidebar-dl-${song.videoId}'),
                 videoId: song.videoId,
                 title: song.title,
                 artist: song.artist,

@@ -97,7 +97,6 @@ def serve_file(filename: str):
         filepath,
         media_type="audio/mpeg",
         filename=filename,
-        content_disposition_type="attachment"
     )
 
 

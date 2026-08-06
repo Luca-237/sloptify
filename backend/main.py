@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from routers import search, album, download, stream
+from routers import search, album, download, stream, image_proxy
 
 app = FastAPI(
     title="Music Search & Downloader API",
@@ -30,6 +30,7 @@ app.include_router(search.router, prefix="/search", tags=["Search"])
 app.include_router(album.router, prefix="/album", tags=["Album"])
 app.include_router(download.router, prefix="/download", tags=["Download"])
 app.include_router(stream.router, prefix="/stream", tags=["Stream"])
+app.include_router(image_proxy.router, prefix="/proxy", tags=["Proxy"])
 
 
 @app.get("/", tags=["Health"])

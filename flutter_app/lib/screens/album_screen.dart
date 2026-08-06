@@ -4,9 +4,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/music_api.dart';
 import '../models/album.dart';
+import '../models/song.dart';
 import '../theme/app_theme.dart';
 import '../widgets/download_button.dart';
 import '../providers/player_provider.dart';
+import '../api/image_proxy.dart';
 
 class AlbumScreen extends ConsumerStatefulWidget {
   final String browseId;
@@ -95,7 +97,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
               children: [
                 if (album.thumbnail != null)
                   CachedNetworkImage(
-                    imageUrl: album.thumbnail!,
+                    imageUrl: proxyImageUrl(album.thumbnail!)!,
                     fit: BoxFit.cover,
                   )
                 else
@@ -164,7 +166,10 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   onTap: () {
-                    ref.read(playerProvider.notifier).playSong(track);
+                    ref.read(playerProvider.notifier).playFromQueue(
+                      album.tracks,
+                      i,
+                    );
                   },
                   leading: Container(
                     width: 36,

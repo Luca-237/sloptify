@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../models/album.dart';
 import '../theme/app_theme.dart';
+import '../api/image_proxy.dart';
 
 class AlbumCard extends StatelessWidget {
   final Album album;
@@ -28,9 +29,9 @@ class AlbumCard extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                child: album.thumbnail != null
+                child: proxyImageUrl(album.thumbnail) != null
                     ? CachedNetworkImage(
-                        imageUrl: album.thumbnail!,
+                        imageUrl: proxyImageUrl(album.thumbnail)!,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         placeholder: (_, __) => Shimmer.fromColors(

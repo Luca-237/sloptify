@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../models/song.dart';
 import '../theme/app_theme.dart';
+import '../api/image_proxy.dart';
 import 'download_button.dart';
 
 class SongCard extends StatelessWidget {
@@ -67,11 +68,12 @@ class SongCard extends StatelessWidget {
   }
 
   Widget _buildThumbnail() {
+    final proxiedUrl = proxyImageUrl(song.thumbnail);
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
-      child: song.thumbnail != null
+      child: proxiedUrl != null
           ? CachedNetworkImage(
-              imageUrl: song.thumbnail!,
+              imageUrl: proxiedUrl,
               width: 56,
               height: 56,
               fit: BoxFit.cover,
