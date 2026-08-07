@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: sloptify-backend
+    env: docker
+    repo: https://github.com/tu-usuario/sloptify # Opcional: Reemplaza con la URL de tu repositorio
+    rootDir: backend
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 10000

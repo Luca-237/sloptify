@@ -26,7 +26,13 @@ class MusicApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       builder: (context, child) {
-        return MainLayout(child: child!);
+        return Overlay(
+          initialEntries: [
+            OverlayEntry(
+              builder: (context) => MainLayout(child: child!),
+            ),
+          ],
+        );
       },
       home: const HomeScreen(),
     );

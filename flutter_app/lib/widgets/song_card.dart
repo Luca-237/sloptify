@@ -40,8 +40,8 @@ class SongCard extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: onTap,
-              splashColor: AppTheme.accent.withOpacity(0.1),
-              highlightColor: AppTheme.accent.withOpacity(0.05),
+              splashColor: AppTheme.accent.withValues(alpha: 0.1),
+              highlightColor: AppTheme.accent.withValues(alpha: 0.05),
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
@@ -105,7 +105,8 @@ class SongCard extends StatelessWidget {
           const SizedBox(height: 2),
           Row(
             children: [
-              const Icon(Icons.album_rounded, size: 11, color: AppTheme.textSecondary),
+              const Icon(Icons.album_rounded,
+                  size: 11, color: AppTheme.textSecondary),
               const SizedBox(width: 3),
               Expanded(
                 child: Text(
