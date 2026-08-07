@@ -24,6 +24,11 @@ def _extract_direct_url(video_id: str) -> str:
         "socket_timeout": 30,
         "geo_bypass": True,
         "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["ios", "android", "web"],
+            }
+        },
     }
     url = f"https://music.youtube.com/watch?v={video_id}"
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:

@@ -64,6 +64,11 @@ async def download_song(req: DownloadRequest):
         "socket_timeout": 30,
         "geo_bypass": True,
         "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["ios", "android", "web"],
+            }
+        },
     }
 
     try:
