@@ -85,6 +85,8 @@ class PlayerNotifier extends StateNotifier<PlayerStateData> {
   }
 
   /// Obtiene la URL del audio cacheado en nuestro backend.
+  /// Primero hace un "warmup" al proxy de streaming para que yt-dlp
+  /// extraiga la URL directa antes de que just_audio intente cargarla.
   Future<String?> _fetchStreamUrl(String videoId) async {
     try {
       final response = await http.get(Uri.parse('$kBaseUrl/stream/url/$videoId'));
@@ -92,8 +94,22 @@ class PlayerNotifier extends StateNotifier<PlayerStateData> {
         final data = jsonDecode(response.body);
         final url = data['url'] as String?;
         if (url != null) {
-          // La URL es relativa al backend, convertir a absoluta
-          return url.startsWith('http') ? url : '$kBaseUrl$url';
+          final fullUrl = url.startsWith('http') ? url : '$kBaseUrl$url';
+
+          // Warmup: hacer una petición Range mínima al proxy para forzar
+          // que yt-dlp extraiga la URL directa ANTES de que just_audio la pida.
+          // Esto evita el error "(4) Failed to load URL" por timeout.
+          try {
+            final warmup = await http.get(
+              Uri.parse(fullUrl),
+              headers: {'Range': 'bytes=0-1'},
+            ).timeout(const Duration(seconds: 90));
+            print("Stream warmup status: ${warmup.statusCode}");
+          } catch (e) {
+            print("Stream warmup warning (continuando igualmente): $e");
+          }
+
+          return fullUrl;
         }
       }
     } catch (e) {

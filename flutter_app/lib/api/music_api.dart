@@ -70,13 +70,19 @@ class MusicApi {
         _uri('/download'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'videoId': videoId, 'title': title, 'artist': artist}),
-      );
+      ).timeout(const Duration(seconds: 120));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final downloadUrl = data['downloadUrl'] as String;
         return '$kBaseUrl$downloadUrl';
       }
-      throw MusicApiException('Error al descargar', statusCode: res.statusCode);
+      // Intentar extraer el detalle del error del backend
+      String detail = 'Error al descargar';
+      try {
+        final errData = jsonDecode(res.body);
+        detail = errData['detail'] ?? detail;
+      } catch (_) {}
+      throw MusicApiException(detail, statusCode: res.statusCode);
     } on MusicApiException {
       rethrow;
     } catch (e) {

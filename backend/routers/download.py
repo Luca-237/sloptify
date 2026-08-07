@@ -60,6 +60,10 @@ async def download_song(req: DownloadRequest):
         ],
         "quiet": True,
         "no_warnings": True,
+        "retries": 3,
+        "socket_timeout": 30,
+        "geo_bypass": True,
+        "nocheckcertificate": True,
     }
 
     try:
