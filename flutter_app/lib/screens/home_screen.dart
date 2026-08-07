@@ -237,9 +237,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final albums = data.cast<Album>();
       return GridView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 220,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 0.72,
@@ -263,7 +263,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final songs = data.cast<Song>();
       return ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.only(top: 8, bottom: 24),
+        padding: const EdgeInsets.only(top: 8, bottom: 90),
         itemCount: songs.length,
         itemBuilder: (_, i) => SongCard(
               song: songs[i],
@@ -278,7 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Modo "all" — mezcla de tipos
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.only(top: 8, bottom: 24),
+      padding: const EdgeInsets.only(top: 8, bottom: 90),
       itemCount: data.length,
       itemBuilder: (_, i) {
         final item = data[i] as Map<String, dynamic>;

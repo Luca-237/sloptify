@@ -14,10 +14,11 @@ app = FastAPI(
 # CORS — permite Flutter web y app Android local
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción, reemplazar con dominio específico
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Servir archivos MP3 descargados

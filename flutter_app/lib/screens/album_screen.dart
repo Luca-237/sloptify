@@ -214,7 +214,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           ),
         ),
 
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        const SliverToBoxAdapter(child: SizedBox(height: 90)),
       ],
     );
   }

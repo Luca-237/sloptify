@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'sidebar_player.dart';
+import 'mini_player.dart';
 import '../theme/app_theme.dart';
 
 class MainLayout extends StatelessWidget {
@@ -10,19 +10,34 @@ class MainLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Layout responsive: en móviles muy angostos se podría ocultar o mostrar como bottom sheet.
-    // Para simplificar, mostraremos la sidebar siempre que haya ancho, o la apilaremos.
-    return Scaffold(
-      backgroundColor: AppTheme.bgDeep,
-      body: Row(
-        children: [
-          Expanded(
-            child: child,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isMobile = constraints.maxWidth <= 800;
+
+        return Scaffold(
+          backgroundColor: AppTheme.bgDeep,
+          body: Row(
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    child,
+                    if (isMobile)
+                      const Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: SafeArea(child: MiniPlayer()),
+                      ),
+                  ],
+                ),
+              ),
+              if (!isMobile)
+                const SidebarPlayer(),
+            ],
           ),
-          // Sidebar
-          const SidebarPlayer(),
-        ],
-      ),
+        );
+      },
     );
   }
 }

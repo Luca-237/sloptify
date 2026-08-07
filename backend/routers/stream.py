@@ -54,7 +54,7 @@ async def proxy_stream(video_id: str, request: Request):
     if range_header:
         req_headers["Range"] = range_header
 
-    client = httpx.AsyncClient()
+    client = httpx.AsyncClient(follow_redirects=True)
     
     # We must use httpx.stream to avoid downloading the entire file into memory
     req = client.build_request("GET", direct_url, headers=req_headers)
@@ -69,9 +69,6 @@ async def proxy_stream(video_id: str, request: Request):
     for k, v in yt_response.headers.items():
         if k.lower() in ("content-type", "content-length", "content-range", "accept-ranges"):
             resp_headers[k] = v
-            
-    resp_headers["Access-Control-Allow-Origin"] = "*"
-
     async def stream_generator():
         try:
             async for chunk in yt_response.aiter_bytes(chunk_size=65536):

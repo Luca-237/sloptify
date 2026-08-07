@@ -86,8 +86,9 @@ class MusicApi {
 
   Future<bool> checkHealth() async {
     try {
+      // Render free tier puede demorar hasta 50s en despertar (cold start)
       final res = await _client.get(_uri('/')).timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 60),
       );
       return res.statusCode == 200;
     } catch (_) {
