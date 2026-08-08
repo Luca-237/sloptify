@@ -4,9 +4,20 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/player_provider.dart';
 import '../theme/app_theme.dart';
 import '../api/image_proxy.dart';
+import 'full_screen_player.dart';
 
 class MiniPlayer extends ConsumerWidget {
   const MiniPlayer({super.key});
+
+  void _showFullScreenPlayer(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const FullScreenPlayer(),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -16,7 +27,10 @@ class MiniPlayer extends ConsumerWidget {
 
     if (song == null) return const SizedBox.shrink();
 
-    return Container(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showFullScreenPlayer(context),
+      child: Container(
       height: 72,
       margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       decoration: BoxDecoration(
@@ -135,7 +149,7 @@ class MiniPlayer extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildPlaceholder() {

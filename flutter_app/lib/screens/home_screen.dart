@@ -33,6 +33,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _checkBackend();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadRandomSuggestions());
+  }
+
+  Future<void> _loadRandomSuggestions() async {
+    final artists = [
+      "Tan Bionica", "Los Caligaris", "Miranda", "Avenged Sevenfold",
+      "Sabroso", "Amar Azul", "Daft Punk", "Virus", "Skrillex", "Rata Blanca"
+    ];
+    
+    if (ref.read(_queryProvider).isEmpty) {
+      ref.read(_searchResultsProvider.notifier).state = const AsyncValue.loading();
+      try {
+        final api = MusicApi();
+        // Buscamos 1 canción de cada artista en paralelo para mayor rapidez
+        final futures = artists.map((artist) => api.searchSongs(artist));
+        final results = await Future.wait(futures);
+        
+        // Tomamos el primer resultado de cada artista (suele ser el más popular/oficial)
+        final selectedSongs = results
+            .where((list) => list.isNotEmpty)
+            .map((list) => list.first)
+            .toList();
+            
+        selectedSongs.shuffle(); // Mezclamos el orden en que aparecen
+
+        if (mounted && ref.read(_queryProvider).isEmpty) {
+          ref.read(_searchResultsProvider.notifier).state = AsyncValue.data(selectedSongs);
+          ref.read(_searchStateProvider.notifier).state = SearchFilter.songs;
+        }
+      } catch (e) {
+        if (mounted && ref.read(_queryProvider).isEmpty) {
+           ref.read(_searchResultsProvider.notifier).state = const AsyncValue.data([]);
+        }
+      }
+    }
   }
 
   Future<void> _checkBackend() async {

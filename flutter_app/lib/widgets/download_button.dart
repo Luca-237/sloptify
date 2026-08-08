@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import '../api/music_api.dart';
 import '../theme/app_theme.dart';
 // ignore: avoid_web_libraries_in_flutter
@@ -97,7 +98,33 @@ class _DownloadButtonState extends ConsumerState<DownloadButton>
       // Guardar en almacenamiento local
       Directory dir;
       if (Platform.isAndroid) {
-        dir = (await getExternalStorageDirectory()) ?? await getApplicationDocumentsDirectory();
+        // Solicitar permisos de almacenamiento o audio
+        final storage = await Permission.storage.request();
+        final audio = await Permission.audio.request();
+        
+        if (storage.isGranted || audio.isGranted) {
+          // Intentar guardar en la carpeta pública de música
+          dir = Directory('/storage/emulated/0/Music/Sloptify');
+          if (!await dir.exists()) {
+            try {
+              await dir.create(recursive: true);
+            } catch (e) {
+              // Fallback a carpeta Descargas si falla
+              dir = Directory('/storage/emulated/0/Download/Sloptify');
+              if (!await dir.exists()) {
+                try {
+                  await dir.create(recursive: true);
+                } catch (e) {
+                  // Fallback a almacenamiento privado
+                  dir = (await getExternalStorageDirectory()) ?? await getApplicationDocumentsDirectory();
+                }
+              }
+            }
+          }
+        } else {
+          // Sin permisos, usar almacenamiento privado que no requiere confirmación
+          dir = (await getExternalStorageDirectory()) ?? await getApplicationDocumentsDirectory();
+        }
       } else {
         dir = await getApplicationDocumentsDirectory();
       }
